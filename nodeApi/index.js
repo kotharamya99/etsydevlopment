@@ -241,11 +241,11 @@ db.connect(function(err) {
     return console.error('error: ' + err.message);
   }
 
-  console.log('Connected to the MySQL server.');
+  console.log('Connected to MySQL server.');
 });
 
 const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
-  console.log("Serving running on port 4000");
+  console.log("Serving is running on port 4000");
 });
