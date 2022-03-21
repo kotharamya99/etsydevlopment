@@ -30,7 +30,7 @@ function Signin({ setshowSignIn }) {
   const checkUser = (e) => {
     e.preventDefault();
 
-    Axios.post("http://3.95.28.170:4000/signin", {
+    Axios.post("http://54.196.9.17:4000/signin", {
       email: email,
       password: password,
     })
@@ -68,7 +68,7 @@ function Signin({ setshowSignIn }) {
   };
 
   useEffect(() => {
-    Axios.get("http://3.95.28.170:4000/signin").then((response) => {
+    Axios.get("http://54.196.9.17:4000/signin").then((response) => {
       // console.log(response);
 
       if (response.data.loggedIn === true) {
