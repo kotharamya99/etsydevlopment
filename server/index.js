@@ -20,7 +20,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://3.95.28.170:3000"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -46,7 +46,7 @@ app.use(
 );
 
 app.use(function (req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.setHeader("Access-Control-Allow-Origin", "http://3.95.28.170:3000");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader(
     "Access-Control-Allow-Methods",

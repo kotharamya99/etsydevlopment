@@ -18,7 +18,7 @@ function Purchases() {
   // }, []);
 
   // const getFinalCart = () => {
-  //   Axios.get("http://localhost:4000/getPurchases/" + user.id).then(
+  //   Axios.get("http://3.95.28.170:4000/getPurchases/" + user.id).then(
   //     (response) => {
   //       if (response.data.success === true) {
   //         console.log("----------------Purchased products-------------------");

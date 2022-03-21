@@ -61,7 +61,7 @@ function shopHome() {
     setShowProds(true);
     console.log("---------------in view Items-------------------");
     Axios.post(
-      "http://localhost:4000/getAllProducts/" + user.id,
+      "http://3.95.28.170:4000/getAllProducts/" + user.id,
       variables
     ).then((response) => {
       if (response.data.success) {
