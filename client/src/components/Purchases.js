@@ -18,7 +18,7 @@ function Purchases() {
   // }, []);
 
   // const getFinalCart = () => {
-  //   Axios.get("/getPurchases/" + user.id).then(
+  //   axiosInstance().get("/getPurchases/" + user.id).then(
   //     (response) => {
   //       if (response.data.success === true) {
   //         console.log("----------------Purchased products-------------------");
