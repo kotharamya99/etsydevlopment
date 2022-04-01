@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Axios from "axios";
 import { useDispatch } from "react-redux";
 import { login, registerUser, activeShop } from "../features/userSlice";
+import axiosInstance from "../axiosInstance"
 
 function register({ setShowRegister }) {
   const [email, setEmail] = useState("");
@@ -9,10 +10,15 @@ function register({ setShowRegister }) {
   const [password, setPassword] = useState("");
   const dispatch = useDispatch();
 
+  // const axiosInstance = Axios.create({
+  //   baseURL: "http://localhost:4000",
+  //   headers: ""
+  // })
+
   const addUser = (e) => {
     e.preventDefault();
     // localStorage.Item("preferedCurrency", userPreferedCurrency);
-    Axios.post("/register", {
+    axiosInstance().post("/register", {
       email: email,
       username: username,
       password: password,
