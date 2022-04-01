@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectUser, updateUserDetails } from "../features/userSlice";
 import Axios from "axios";
 import { Button } from 'react-bootstrap';
+import axiosInstance from "../axiosInstance"
 
 function profileForm() {
   const dispatch = useDispatch();
@@ -37,8 +38,27 @@ function profileForm() {
     formData.append("about", about);
 
     console.log(dob);
+    
+    const response = await axiosInstance().get(`/s3url`);
+        if(response && response.data)
+        {
+            const url = response.data.uploadURL;
+            await fetch(url, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "multipart/form-data"
+                },
+                body: selectedFile
+              })
 
-    Axios.put("/updateUser/" + user.id, formData, {
+              const imageUrl = url.split('?')[0]
+              setUserDetails({
+            ...userDetails,
+            imageUrl: imageUrl,
+            })
+        }
+
+    axiosInstance().put("/updateUser/" + user.id, formData, {
       headers: { "content-Type": "multipart/form-data" },
     }).then((response) => {
       console.warn(response);
@@ -66,7 +86,7 @@ function profileForm() {
   }, []);
 
   const fetchItemDetails = () => {
-    Axios.get("/getShopById/" + user.id).then(
+    axiosInstance().get("/getShopById/" + user.id).then(
       (response) => {
         // console.log(response);
 
@@ -95,7 +115,7 @@ function profileForm() {
   // }, []);
 
   // const fetchItemDetails = () => {
-  //   Axios.get("/getShopById/" + user.id).then(
+  //   axiosInstance().get("/getShopById/" + user.id).then(
   //     (response) => {
   //       if (response) {
   //         console.log(response.data.result[0].shopImage);
@@ -548,11 +568,6 @@ function profileForm() {
               <div className="section">
                 <div className="label">Birthday</div>
                 <input
-                  defaultValue={
-                    dateFunction(user.dob)
-                      .toISOString()
-                      .split("T")[0]
-                  }
                   type="date"
                   style={{ marginLeft: "-2%" }}
                   onChange={(event) => {
