@@ -1,4 +1,5 @@
 import Axios from "axios";
+import axiosInstance from "../axiosInstance";
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { getProducts } from "../features/productsSlice";
@@ -18,7 +19,7 @@ function shopHeader() {
   const [prodUserId, setProdUserId] = useState(0);
 
   useEffect(() => {
-    Axios.get("http://:4000/getShopById/" + user.id).then(
+    axiosInstance().get("/getShopById/" + userId).then(
       (response) => {
         if (response.data.success) {
           // setShop(response.data.result);
