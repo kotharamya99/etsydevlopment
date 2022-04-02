@@ -197,38 +197,6 @@ app.post("/signin", (req, res) => {
   });
 });
 
-// app.post("/signin", (req, res) => {
-//   const email = req.body.email;
-//   const password = req.body.password;
-//   console.log("In login post req");
-//   // console.log(email + " " + password + " email body");
-//   db.query(
-//     "SELECT * FROM Users WHERE email = ? AND password = ?",
-//     [email, password],
-//     (err, result) => {
-//       console.log(
-//         "res length------------" + result[0] + "=======" + result.length
-//       );
-//       if (err) {
-//         res.send({ err: err });
-//       }
-//       if (result.length > 0) {
-//         res.cookie("user", result[0].name, {
-//           maxAge: 900000,
-//           httpOnly: false,
-//           path: "/",
-//         });
-//         req.session.user = result;
-//         res.send(result);
-//       } else {
-//         res.send({ message: "Invalid creds" });
-//       }
-//     }
-//   );
-// });
-
-
-
 app.get("/user", async (req, res) => {
   var userInstance = ModelFactory.getUserInstance()
   let users = await userInstance.find({})
@@ -321,12 +289,10 @@ app.post("/addProduct/:id", async (req, res) => {
       const itemCount = req.body.itemCount;
       const itemImage = req.file.filename;
       const itemCategory = req.body.itemCategory;
-
-       console.log(itemImage);
+      console.log(itemImage);
       console.log(itemName);
       var item = { userId, itemName, itemDescription, itemPrice, itemCount, itemCategory }
       var itemsInstance = ModelFactory.getItemInstance();
-      // itemsInstance.save
       var savedItem = await itemsInstance.create(item);
       return res.json(savedItem).status(200)
     });
@@ -403,20 +369,24 @@ app.put("/updateItemById/:itemId", (req, res) => {
   console.log(itemDescriprion);
   console.log(itemName);
   console.log(id);
-
-  db.query(
-    "UPDATE Items SET itemName=?, itemPrice=?, itemDescription=?, itemCount=?, itemCategory=? WHERE itemId=?",
-    [itemName, itemPrice, itemDescriprion, itemCount, itemCategory, id],
-    (err, result) => {
-      console.log(result.itemName);
-      if (err) {
-        console.log(err);
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+  let itemInstance = ModelFactory.getItemInstance()
+  let results = await itemInstance.findOneAndUpdate({itemId}, {$set: {
+    itemName, itemDescriprion, itemPrice, itemCount, itemCategory
+  }})
+  return res.json({success: true, result: results}).statusCode(200)
+  // db.query(
+  //   "UPDATE Items SET itemName=?, itemPrice=?, itemDescription=?, itemCount=?, itemCategory=? WHERE itemId=?",
+  //   [itemName, itemPrice, itemDescriprion, itemCount, itemCategory, id],
+  //   (err, result) => {
+  //     console.log(result.itemName);
+  //     if (err) {
+  //       console.log(err);
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 
 app.put("/updateItemImageById/:itemId", (req, res) => {
@@ -436,19 +406,22 @@ app.put("/updateItemImageById/:itemId", (req, res) => {
       console.log("In update item post");
       console.log(id);
       console.log(itemImage);
-      db.query(
-        "UPDATE Items SET itemImage=? WHERE itemId=?",
-        [itemImage, id],
-        (err, result) => {
-          console.log(result);
-          if (err) {
-            console.log(err);
-            res.send(err);
-          } else {
-            res.send({ success: true, result });
-          }
-        }
-      );
+      var itemInstance = ModelFactory.getItemInstance();
+      var result = await itemInstance.findOneAndUpdate({itemId}, {$set: {itemImage}})
+      return res.json({success: true, result})
+      // db.query(
+      //   "UPDATE Items SET itemImage=? WHERE itemId=?",
+      //   [itemImage, id],
+      //   (err, result) => {
+      //     console.log(result);
+      //     if (err) {
+      //       console.log(err);
+      //       res.send(err);
+      //     } else {
+      //       res.send({ success: true, result });
+      //     }
+      //   }
+      // );
     });
   } catch (err) {
     console.log(err);
@@ -492,18 +465,22 @@ app.put("/updateShopImageById/:id", (req, res) => {
       console.log("In update shop post ----------------------");
       console.log(shopImage);
 
-      db.query(
-        "UPDATE Users SET shopImage=? WHERE id=?",
-        [shopImage, userId],
-        (err, result) => {
-          if (err) {
-            console.log(err + "err");
-            res.send(err);
-          } else {
-            res.send({ success: true, result });
-          }
-        }
-      );
+      var userInstance = ModelFactory.getUserInstance();
+      var result = await userInstance.findOneAndUpdate({id: userId}, {$set: {shopImage}})
+      return res.json({success: true, result})
+
+      // db.query(
+      //   "UPDATE Users SET shopImage=? WHERE id=?",
+      //   [shopImage, userId],
+      //   (err, result) => {
+      //     if (err) {
+      //       console.log(err + "err");
+      //       res.send(err);
+      //     } else {
+      //       res.send({ success: true, result });
+      //     }
+      //   }
+      // );
     });
   } catch (err) {
     console.log(err);
@@ -515,17 +492,21 @@ app.get("/getSearchItems/:searchValue", (req, res) => {
   const searchValue = req.params.searchValue;
   console.log(searchValue);
 
-  db.query(
-    `SELECT * FROM Items WHERE itemName REGEXP '${searchValue}'`,
-    (err, result) => {
-      console.log(result);
-      if (err) {
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+  var query = { itemName : {$regex:searchValue}}
+    var  result = await itemInstance.find(query).skip(skip).limit(limit)
+    return res.json({success: true, result})
+
+  // db.query(
+  //   `SELECT * FROM Items WHERE itemName REGEXP '${searchValue}'`,
+  //   (err, result) => {
+  //     console.log(result);
+  //     if (err) {
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 
 app.put("/updateUser/:id", async (req, res) => {
@@ -724,19 +705,23 @@ app.put("/updateCartQuantity/:userId", (req, res) => {
   console.log(qty);
   // console.log(id);
 
-  db.query(
-    "UPDATE Carts SET qty = ? WHERE itemId=? AND userId = ?",
-    [qty, itemId, userId],
-    (err, result) => {
-      console.log(result);
-      if (err) {
-        console.log(err);
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+  var cartInstance = ModelFactory.getCartInstance();
+      var result = await cartInstance.findOneAndUpdate({userId,itemId}, {$set: {qty}})
+      return res.json({success: true, result})
+
+  // db.query(
+  //   "UPDATE Carts SET qty = ? WHERE itemId=? AND userId = ?",
+  //   [qty, itemId, userId],
+  //   (err, result) => {
+  //     console.log(result);
+  //     if (err) {
+  //       console.log(err);
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 
 app.get("/getQtyFromCart/:userid/:itemId", (req, res) => {
@@ -795,19 +780,23 @@ app.put("/updateItemById/:itemId", (req, res) => {
   console.log(itemName);
   console.log(id);
 
-  db.query(
-    "UPDATE Items SET itemName=?, itemPrice=?, itemDescription=?, itemCount=?, itemCategory=? WHERE itemId=?",
-    [itemName, itemPrice, itemDescriprion, itemCount, itemCategory, id],
-    (err, result) => {
-      console.log(result.itemName);
-      if (err) {
-        console.log(err);
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+      var itemInstance = ModelFactory.getItemInstance();
+      var result = await itemInstance.findOneAndUpdate({itemId}, {$set: {itemName,itemPrice,itemDescription,itemCount,itemCategory}})
+      return res.json({success: true, result})
+
+  // db.query(
+  //   "UPDATE Items SET itemName=?, itemPrice=?, itemDescription=?, itemCount=?, itemCategory=? WHERE itemId=?",
+  //   [itemName, itemPrice, itemDescriprion, itemCount, itemCategory, id],
+  //   (err, result) => {
+  //     console.log(result.itemName);
+  //     if (err) {
+  //       console.log(err);
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 
 const PORT = process.env.PORT || 4000;
