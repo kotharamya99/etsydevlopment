@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const User = require("../../models/users.model");
 
 let registerUser = async (msg, callback) => {
+  console.log("## msg", msg);
   try {
     const {
       name,
@@ -19,7 +20,7 @@ let registerUser = async (msg, callback) => {
       shopImage
     } = msg;
 
-    const pass = await bcrypt.hash(password, 10);
+    const pass = password //await bcrypt.hash(password, 10);
 
     User.findOne({ email: email }, (err, result) => {
       if (err) {
@@ -66,21 +67,7 @@ let registerUser = async (msg, callback) => {
           } else {
             console.log("User Created");
             callback(null, {
-              status: 201,
-              user: {
-                userId: result._id,
-                name: result.name,
-                email: result.email,
-                fullAddress: result.fullAddress,
-                city: result.city,
-                phone_number: result.phone_number,
-                dob: result.dob,
-                gender: result.gender,
-                profilePic: result.profilePic,
-                about: result.about,
-                shopName: result.shopName,
-                shopImage: result.shopImage
-              },
+              success: true
             });
           }
         });
