@@ -52,6 +52,7 @@ let login = async (msg, callback) => {
                 status: 200,
                 user: {
                   userId: user_id,
+                  id: user_id,
                   name: result.name,
                   email: result.email,
                   fullAddress: result.fullAddress,
