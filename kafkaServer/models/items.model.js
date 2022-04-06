@@ -6,9 +6,17 @@ const Items = mongoose.model(
   "Items",
   new Schema(
     {
+      
       userId: {
         type: mongoose.Schema.Types.ObjectId, 
         ref: "Users"
+      },
+      itemId: {
+        type: String,
+        allowNull: false,
+        unique: true,
+        autoIncrement: true,
+        primaryKey: true,
       },
       itemName: {
         type: String,
