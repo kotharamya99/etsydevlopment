@@ -1,7 +1,7 @@
 const { json } = require("body-parser");
 const mysql = require("mysql");
 const constants = require("../config/config.json");
-const Users = require("../models");
+const Users = require("../models_mongo");
 const session = require("express-session");
 
 const db = mysql.createConnection({
