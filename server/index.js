@@ -1,22 +1,25 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const models = require("./models");
+// const models = require("./models_mongo");
 const session = require("express-session");
 const mysql = require("mysql");
 const constants = require("./config/config.json");
-const Users = require("./models");
+const initMongoDB = require('./db.mongo/index.js');
 // const jwt = require("express-jwt");
 const jwt = require("jsonwebtoken");
 const cookieParser = express("cocookie-parser");
 const multer = require("multer");
 const path = require("path");
 const kafka = require("./kafka/client");
-
+const _ =require("lodash");
 //import routes
 // const userRoutes = require("./routes/user");
 const { count } = require("console");
-
+// const Items = require("./models_mongo/Items");
+async function initdb() {
+  global.ModelFactory = await initMongoDB()
+}
 const app = express();
 
 app.use(
@@ -89,7 +92,7 @@ const shopStorage = multer.diskStorage({
     cb(null, Date.now() + file.originalname);
   },
 });
-
+initdb()
 const userStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "../client/public/Users/Images");
@@ -226,7 +229,10 @@ app.post("/signin", (req, res) => {
 
 
 
-app.get("/user", (req, res) => {
+app.get("/user", async (req, res) => {
+  var userInstance = ModelFactory.getUserInstance()
+  let users = await userInstance.find({})
+  return res.json(users).status(200)
   console.log("hello" + req.session);
   if (req.session.user) {
     res.send({ loggedIn: true, user: req.session.user });
@@ -249,29 +255,6 @@ app.post("/findShopDuplicates", (req, res) => {
   });
 });
 
-// app.post("/findShopDuplicates", (req, res) => {
-//   const shopName = req.body.shopName;
-//   console.log("In findShopDuplicates " + shopName);
-//   db.query(
-//     "SELECT * FROM Users WHERE shopName=?",
-//     [shopName],
-//     (err, result) => {
-//       console.log(result.length);
-//       if (result.length !== 0) {
-//         res.send({
-//           message: "duplicate",
-//         });
-//         console.log("In shops db shop name found");
-//       } else {
-//         res.send({
-//           message: "No duplicates",
-//         });
-//         console.log("In shops db and no shop name found");
-//       }
-//     }
-//   );
-// });
-
 // Ramya did it #2
 app.post("/createShop/:id", (req, res) => {
   // console.log("HDHHAD");
@@ -289,49 +272,41 @@ app.post("/createShop/:id", (req, res) => {
   });
 });
 
-// app.post("/createShop/:id", (req, res) => {
-//   const shopName = req.body.shopName;
-//   const id = req.params.id;
-//   console.log("In create shop " + id);
-//   db.query(
-//     "UPDATE Users SET shopName=? WHERE id=?",
-//     [shopName, id],
-//     (err, result) => {
-//       if (err) {
-//         console.log(err);
-//       } else {
-//         console.log(result);
-//         // res.send(result);
-//         res.send("Shops Value Inserted in user successfully");
-//       }
-//     }
-//   );
-// });
-
 const addProduct = async (req, res) => {
   const userId = req.params.id;
   const itemImage = req.itemImage;
   const itemName = req.body.itemName;
-  const itemDescriprion = req.body.description;
+  const itemDescription = req.body.description;
   const itemPrice = req.body.price;
   const itemCount = req.body.count;
 
-  db.query(
-    "INSERT INTO Items (userId, itemName, itemPrice, itemDescription, itemCount, itemImage) VALUES (?, ?, ?, ?, ?, ?)",
-    [userId, itemName, itemPrice, itemDescriprion, itemCount, itemImage],
-    (err, result) => {
-      if (err) {
-        res.send("error" + err);
-      } else {
-        res.send("Product added successfully");
-      }
-    }
-  );
+const item = new Items ({
+  userId, itemName, itemPrice, itemDescription, itemCount, itemImage
+
+})
+await item.save();
+if (err) {
+  res.status(err.status).send(err);
+} else {
+  res.status(results.status).send(results);
+}
+
+  // db.query(
+  //   "INSERT INTO Items (userId, itemName, itemPrice, itemDescription, itemCount, itemImage) VALUES (?, ?, ?, ?, ?, ?)",
+  //   [userId, itemName, itemPrice, itemDescriprion, itemCount, itemImage],
+  //   (err, result) => {
+  //     if (err) {
+  //       res.send("error" + err);
+  //     } else {
+  //       res.send("Product added successfully");
+  //     }
+  //   }
+  // );
 };
 app.post("/addProduct/:id", async (req, res) => {
   try {
     let upload = multer({ storage: storage }).single("itemImage");
-    upload(req, res, function (err) {
+    upload(req, res, async function (err) {
       if (!req.file) {
         return res.send("Please select an image to upload");
       } else if (err instanceof multer.MulterError) {
@@ -339,44 +314,43 @@ app.post("/addProduct/:id", async (req, res) => {
       } else if (err) {
         return res.send(err);
       }
-
       const userId = req.params.id;
       const itemName = req.body.itemName;
-      const itemDescriprion = req.body.itemDescription;
+      const itemDescription = req.body.itemDescription;
       const itemPrice = req.body.itemPrice;
       const itemCount = req.body.itemCount;
       const itemImage = req.file.filename;
       const itemCategory = req.body.itemCategory;
 
-      console.log(itemImage);
+       console.log(itemImage);
       console.log(itemName);
-      db.query(
-        "INSERT INTO Items (userId, itemName, itemCategory, itemPrice, itemDescription, itemCount, itemImage) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [
-          userId,
-          itemName,
-          itemCategory,
-          itemPrice,
-          itemDescriprion,
-          itemCount,
-          itemImage,
-        ],
-        (err, result) => {
-          if (err) {
-            console.log(err);
-            res.send({ message: "error" });
-          } else {
-            res.send({ message: "success" });
-          }
-        }
-      );
+      var item = { userId, itemName, itemDescription, itemPrice, itemCount, itemCategory }
+      var itemsInstance = ModelFactory.getItemInstance();
+      // itemsInstance.save
+      var savedItem = await itemsInstance.create(item);
+      return res.json(savedItem).status(200)
     });
-  } catch (err) {
-    console.log(err);
-  }
-});
+  } catch{
+  (err, result) => {
+        if (err) {
+          return res.json(err).status(400)
+        }
+}}}
+);
+// app.get("/getItemById/:itemId", (req, res) => {
+//   const id = req.params.itemId;
+//   db.query("SELECT * FROM Items WHERE itemId=?", id, (err, result) => {
+//     console.log(result);
+//     if (err) {
+//       res.send(err);
+//     } else {
+//       res.send(result);
+//     }
+//   });
+// });
 
-app.post("/getAllProducts/:id", (req, res) => {
+app.post("/getAllProducts/:id", async (req, res) => {
+  var itemInstance = ModelFactory.getItemInstance()
   const id = req.params.id;
   const limit = req.body.limit ? parseInt(req.body.limit) : 100;
   const skip = parseInt(req.body.skip);
@@ -388,56 +362,32 @@ app.post("/getAllProducts/:id", (req, res) => {
 
   if (term) {
     console.log("In term");
-    db.query(
-      // SELECT * FROM test_schema.Items WHERE itemName LIKE "%Rice%" AND userId=1;
-      `SELECT * FROM Items WHERE itemName LIKE "%${term}%" AND userId=? LIMIT  ?, ?`,
-      [id, skip, limit],
-      (err, result) => {
-        if (err) {
-          // console.log(result + "result in db");
-
-          res.send(err + "err");
-          console.log(err);
-        } else {
-          console.log("Out term");
-
-          console.log(result + "result");
-          res
-            .status(200)
-            .json({ success: true, result, postSize: result.length });
-        }
-      }
-    );
+    var query = { itemName : {$regex: term}}
+    var  results = await itemInstance.find(query).skip(skip).limit(limit)
+    return res.status(200).json({ success: true, results, postSize: results.length });
   } else {
-    db.query(
-      "SELECT * FROM Items WHERE userId=? LIMIT  ?, ?",
-      [id, skip, limit],
-      (err, result) => {
-        console.log(result.length + "result in db");
-        if (err) {
-          console.log("err");
-          res.send(err + "err");
-        } else {
-          console.log(result + "result");
-          res
-            .status(200)
-            .json({ success: true, result, postSize: result.length });
-        }
-      }
-    );
+    var  results = await itemInstance.find({userId: id})
+    return res.status(200).json({ success: true, results, postSize: results.length });
   }
 });
 
+// app.get("/getItemById/:itemId", (req, res) => {
+//   const id = req.params.itemId;
+//   db.query("SELECT * FROM Items WHERE itemId=?", id, (err, result) => {
+//     console.log(result);
+//     if (err) {
+//       res.send(err);
+//     } else {
+//       res.send(result);
+//     }
+//   });
+// });
+
 app.get("/getItemById/:itemId", (req, res) => {
   const id = req.params.itemId;
-  db.query("SELECT * FROM Items WHERE itemId=?", id, (err, result) => {
-    console.log(result);
-    if (err) {
-      res.send(err);
-    } else {
-      res.send(result);
-    }
-  });
+  var itemInstance = ModelFactory.getItemInstance()
+  var  results = await itemInstance.find({itemId: id})
+  return res.status(200).json(results);
 });
 
 app.put("/updateItemById/:itemId", (req, res) => {
@@ -508,15 +458,19 @@ app.put("/updateItemImageById/:itemId", (req, res) => {
 app.get("/getShopById/:userId", (req, res) => {
   console.log("In get shop by id");
   const userId = req.params.userId;
-  db.query("SELECT * FROM Users WHERE id=?", userId, (err, result) => {
-    if (err) {
-      res.send(err);
-      console.log(err);
-    } else {
-      console.log(result);
-      res.send({ success: true, result: result });
-    }
-  });
+  var userInstance = ModelFactory.getUserInstance()
+  var  results = await userInstance.find({id: userId})
+  return res.status(200).json({success: true, result: results});
+
+  // db.query("SELECT * FROM Users WHERE id=?", userId, (err, result) => {
+  //   if (err) {
+  //     res.send(err);
+  //     console.log(err);
+  //   } else {
+  //     console.log(result);
+  //     res.send({ success: true, result: result });
+  //   }
+  // });
 });
 
 app.put("/updateShopImageById/:id", (req, res) => {
@@ -596,93 +550,113 @@ app.put("/updateUser/:id", async (req, res) => {
 
       console.log(userImage);
       console.log(userName);
-      db.query(
-        "UPDATE Users set name = ?, city  = ?, dob  = ?, gender  = ?, about  = ?, profilePic=? where id = ? ",
-        [userName, city, dob, gender, about, userImage, userId],
-        (err, result) => {
-          console.log(result);
-          if (err) {
-            console.log(err);
-            res.send({ message: "error" });
-          } else {
-            res.send({ message: "success", result });
-          }
-        }
-      );
+      // db.query(
+      //   "UPDATE Users set name = ?, city  = ?, dob  = ?, gender  = ?, about  = ?, profilePic=? where id = ? ",
+      //   [userName, city, dob, gender, about, userImage, userId],
+      //   (err, result) => {
+      //     console.log(result);
+      //     if (err) {
+      //       console.log(err);
+      //       res.send({ message: "error" });
+      //     } else {
+      //       res.send({ message: "success", result });
+      //     }
+      //   }
+      // );
     });
   } catch (err) {
     console.log(err);
   }
 });
-
 app.get("/getItems", (req, res) => {
   console.log("Getting all products in home");
-  db.query("SELECT * FROM Items", (err, result) => {
-    console.log(result);
-    if (err) {
-      console.log(err);
-      res.send(err);
-    } else {
-      res.send({ success: true, result });
-    }
-  });
+  var itemInstance = ModelFactory.getItemInstance()
+  var  results = await itemInstance.find({})
+  return res.status(200).json({success: true,result:results});
+
+  // db.query("SELECT * FROM Items", (err, result) => {
+  //   console.log(result);
+  //   if (err) {
+  //     console.log(err);
+  //     res.send(err);
+  //   } else {
+  //     res.send({ success: true, result });
+  //   }
+  // });
 });
 
 app.post("/addFavourite", (req, res) => {
   const userId = req.body.userId;
   console.log(userId);
   const itemId = req.body.itemId;
-  db.query(
-    "INSERT INTO Favourites (itemId, userId) VALUES (?, ?)",
-    [itemId, userId],
-    (err, result) => {
-      console.log(result);
-      if (err) {
-        console.log(err);
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+
+      var item = { userId, itemId }
+      var favouriteInstance = ModelFactory.getFavoriteInstance();
+      var savedItem = await favouriteInstance.create(item);
+      return res.json(savedItem).status(200)
+
+  // db.query(
+  //   "INSERT INTO Favourites (itemId, userId) VALUES (?, ?)",
+  //   [itemId, userId],
+  //   (err, result) => {
+  //     console.log(result);
+  //     if (err) {
+  //       console.log(err);
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 
 app.get("/getFavourites/:id", (req, res) => {
   const userId = req.params.id;
   console.log(userId);
   console.log("Getting all favoutrites in home");
-  db.query(
-    "SELECT * FROM Items WHERE itemId IN (SELECT itemId FROM Favourites WHERE userId=?)",
-    [userId],
-    (err, result) => {
-      console.log(result);
-      if (err) {
-        console.log(err);
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+  var favouriteInstance = ModelFactory.getFavoriteInstance(),
+  itemInstance = ModelFactory.getItemInstance();
+
+  var favoriteItems = await favouriteInstance.find({userId});
+  var itemIds = _.map(favoriteItems, 'itemId')
+  var result = await itemInstance.find({itemId : {$in: itemIds}})
+  res.send({ success: true, result });
+  return;
+  //db.query(
+  //   "SELECT * FROM Items WHERE itemId IN (SELECT itemId FROM Favourites WHERE userId=?)",
+  //   [userId],
+  //   (err, result) => {
+  //     console.log(result);
+  //     if (err) {
+  //       console.log(err);
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 
 app.delete("/deleteFavourite/:itemId/:userId", (req, res) => {
+  var favouriteInstance = ModelFactory.getFavoriteInstance();
   const itemId = req.params.itemId;
   const userId = req.params.userId;
   console.log("Deleting Fav Item");
-  db.query(
-    "delete FROM Favourites WHERE itemId =? and userId =? ",
-    [itemId, userId],
-    (err, result) => {
-      console.log(result);
-      if (err) {
-        console.log(err);
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+  var result = await favouriteInstance.remove({itemId,userId});
+  return res.send({ success: true, result});
+  // db.query(
+  //   "delete FROM Favourites WHERE itemId =? and userId =? ",
+  //   [itemId, userId],
+  //   (err, result) => {
+  //     console.log(result);
+  //     if (err) {
+  //       console.log(err);
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 
 app.post("/addCartProduct/:userId", (req, res) => {
@@ -690,39 +664,53 @@ app.post("/addCartProduct/:userId", (req, res) => {
   const items = req.body.items;
   const orderId = req.body.orderId;
   const price = req.body.price;
+      var item = { itemId: items, orderId, price, userId }
+      var cartInstance = ModelFactory.getCartInstance();
+      var cartItem = await cartInstance.create(item);
+      return res.json({ success: true, result: cartItem}).status(200)
 
-  db.query(
-    "INSERT INTO Carts (items, orderId, price, userId) VALUES (?, ?, ?, ?)",
-    [items, orderId, price, userId],
-    (err, result) => {
-      console.log(result);
-      if (err) {
-        console.log(err);
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+  // db.query(
+  //   "INSERT INTO Carts (items, orderId, price, userId) VALUES (?, ?, ?, ?)",
+  //   [items, orderId, price, userId],
+  //   (err, result) => {
+  //     console.log(result);
+  //     if (err) {
+  //       console.log(err);
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 
 app.get("/getFinalCartProducts/:userId", (req, res) => {
   const userId = req.params.userId;
   console.log("Getting cart products in cart");
-  db.query(
-    "SELECT * FROM Items WHERE itemId IN (SELECT itemId FROM Carts WHERE userId=?)",
 
-    [userId],
-    (err, result) => {
-      console.log(result);
-      if (err) {
-        console.log(err);
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+  console.log("Getting all favoutrites in home");
+  var cartInstance = ModelFactory.getCartInstance(),
+  itemInstance = ModelFactory.getItemInstance();
+
+  var cartItems = await cartInstance.find({userId});
+  var itemIds = _.map(cartItems, 'itemId')
+  var result = await itemInstance.find({itemId : {$in: itemIds}})
+  res.send({ success: true, result });
+  return;
+  // db.query(
+  //   "SELECT * FROM Items WHERE itemId IN (SELECT itemId FROM Carts WHERE userId=?)",
+
+  //   [userId],
+  //   (err, result) => {
+  //     console.log(result);
+  //     if (err) {
+  //       console.log(err);
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 
 app.put("/updateCartQuantity/:userId", (req, res) => {
@@ -755,35 +743,42 @@ app.get("/getQtyFromCart/:userid/:itemId", (req, res) => {
   const userId = req.params.userid;
   const itemId = req.params.itemId;
   console.log("Getting all cart products in home");
-  db.query(
-    "select qty from Carts where userId=? AND itemId=?",
-    [userId, itemId],
-    (err, result) => {
-      console.log(result);
-      if (err) {
-        console.log(err);
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+  var cartInstance = ModelFactory.getCartInstance()
+  var  results = await cartInstance.find({itemId,userId})
+  return res.status(200).json({success: true,result:results});
+
+  // db.query(
+  //   "select qty from Carts where userId=? AND itemId=?",
+  //   [userId, itemId],
+  //   (err, result) => {
+  //     console.log(result);
+  //     if (err) {
+  //       console.log(err);
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 app.get("/getPurchases/:UserId", (req, res) => {
-  const userid = req.params.UserId;
+  const userId = req.params.UserId;
   console.log("Get purchased items");
-  db.query(
-    "SELECT * FROM Carts WHERE userId=? order by cartId desc limit 0, 1 ",
-    [userid],
-    (err, result) => {
-      console.log(result);
-      if (err) {
-        res.send(err);
-      } else {
-        res.send({ success: true, result });
-      }
-    }
-  );
+  var purchaseInstance = ModelFactory.getPurchaseInstance()
+  var  results = await purchaseInstance.find({userId}).sort({createdOn:1})
+  return res.status(200).json({success: true,result:results});
+  // db.query(
+  //   "SELECT * FROM Carts WHERE userId=? order by cartId desc limit 0, 1 ",
+  //   [userid],
+  //   (err, result) => {
+  //     console.log(result);
+  //     if (err) {
+  //       res.send(err);
+  //     } else {
+  //       res.send({ success: true, result });
+  //     }
+  //   }
+  // );
 });
 
 app.put("/updateItemById/:itemId", (req, res) => {
@@ -816,8 +811,11 @@ app.put("/updateItemById/:itemId", (req, res) => {
 });
 
 const PORT = process.env.PORT || 4000;
-models.sequelize.sync().then(() => {
-  app.listen(PORT, () => {
-    console.log("Serving running on port 4000");
-  });
+app.listen(PORT, () => {
+  console.log("Serving running on port 4000");
 });
+// models.sequelize.sync().then(() => {
+//   app.listen(PORT, () => {
+//     console.log("Serving running on port 4000");
+//   });
+// });
