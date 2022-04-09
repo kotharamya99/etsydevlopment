@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import userSlice, { selectUser } from "../../features/userSlice";
 import CloseLogin from "../closeLogin";
 import Axios from "axios";
-
+import axiosInstance from "../../axiosInstance"
 const editShopImage = ({ editShopPage }) => {
   const [shopImage, setShopImage] = useState("");
   const [product, setProduct] = useState();
@@ -15,7 +15,7 @@ const editShopImage = ({ editShopPage }) => {
     const formData = new FormData();
     formData.append("shopImage", shopImage);
     console.log("Inedit client axios");
-    Axios.put(
+    axiosInstance().put(
       "/updateShopImageById/" + user.id,
       formData
     ).then((response) => {
@@ -34,7 +34,7 @@ const editShopImage = ({ editShopPage }) => {
   }, []);
 
   const fetchItemDetails = () => {
-    Axios.get("/getShopById/" + user.id).then(
+    axiosInstance().get("/getShopById/" + user.id).then(
       (response) => {
         if (response) {
           console.log(response.data.result[0].shopImage);
