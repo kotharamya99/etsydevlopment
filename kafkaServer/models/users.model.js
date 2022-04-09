@@ -8,7 +8,6 @@ const Users = mongoose.model(
     {
       name: {
         type: String,
-        required: true,
         trim: true,
       },
       email: {
@@ -39,7 +38,6 @@ const Users = mongoose.model(
       },
       gender: {
         type: String,
-        required: true,
         trim: true,
       },
       profilePic: {
