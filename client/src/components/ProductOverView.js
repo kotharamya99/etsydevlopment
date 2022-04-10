@@ -49,7 +49,7 @@ function ProductOverView() {
     // }
     // console.log(productView.length);
     // if (user !== null) {
-    //   Axios.post("/addProductToCart/" + user.id, {
+    //   axiosInstance().post("/addProductToCart/" + user.id, {
     // itemId: cartProduct.itemId,
     // itemName: cartProduct.itemName,
     // itemDescription: cartProduct.itemDescription,
