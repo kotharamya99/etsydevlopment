@@ -10,6 +10,7 @@ import {
   getAllFavourites,
   updateFavourites,
 } from "../features/productsSlice";
+import axiosInstance from "../axiosInstance";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import AirportShuttleIcon from "@mui/icons-material/AirportShuttle";
 import { Navigate } from "react-router-dom";
@@ -27,7 +28,7 @@ function profileDashboard() {
   }, []);
 
   const getFavouriteItems = () => {
-    Axios.get("/getFavourites/" + user.id).then(
+    axiosInstance().get("/getFavourites/" + user.id).then(
       (response) => {
         console.log(response.data.result);
         if (response.data.success === true) {
@@ -47,7 +48,7 @@ function profileDashboard() {
 
   const handleFavourite = (itemId, userId) => {
     console.log("Favourites deletd" + itemId + userId);
-    Axios.delete(
+    axiosInstance().delete(
       "/deleteFavourite/" + itemId + "/" + userId,
       {
         itemId: itemId,
