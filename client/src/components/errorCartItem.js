@@ -20,7 +20,7 @@ function Cart() {
   }, []);
 
   const getCartItems = () => {
-    Axios.get("/getFinalCartProducts/" + user.id).then(
+    axiosInstance().get("/getFinalCartProducts/" + user.id).then(
       (response) => {
         console.log(response);
         setCartItems([...cartItems, ...response.data.result]);
@@ -31,7 +31,7 @@ function Cart() {
   const qtyChangeHandler = (itemId, qty) => {
     // dispatch(addProductToCart(id, qty));
     console.log(itemId);
-    Axios.put("/updateCartQuantity/" + user.id, {
+    axiosInstance().put("/updateCartQuantity/" + user.id, {
       itemId: itemId,
       qty: qty,
     }).then((response) => {
