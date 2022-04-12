@@ -5,20 +5,20 @@ const cors = require("cors");
 const session = require("express-session");
 const mysql = require("mysql");
 const constants = require("./config/config.json");
-const initMongoDB = require('./db.mongo/index.js');
+const initMongoDB = require("./db.mongo/index.js");
 // const jwt = require("express-jwt");
 const jwt = require("jsonwebtoken");
 const cookieParser = express("cocookie-parser");
 const multer = require("multer");
 const path = require("path");
 const kafka = require("./kafka/client");
-const _ =require("lodash");
+const _ = require("lodash");
 //import routes
 // const userRoutes = require("./routes/user");
 const { count } = require("console");
 // const Items = require("./models_mongo/Items");
 async function initdb() {
-  global.ModelFactory = await initMongoDB()
+  global.ModelFactory = await initMongoDB();
 }
 const app = express();
 
@@ -49,20 +49,20 @@ app.use(
   })
 );
 
-app.use(function (req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,HEAD,OPTIONS,POST,PUT,DELETE"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
-  );
-  res.setHeader("Cache-Control", "no-cache");
-  next();
-});
+// app.use(function (req, res, next) {
+//   res.setHeader("Access-Control-Allow-Origin", process.env.BACKEND_URL);
+//   res.setHeader("Access-Control-Allow-Credentials", "true");
+//   res.setHeader(
+//     "Access-Control-Allow-Methods",
+//     "GET,HEAD,OPTIONS,POST,PUT,DELETE"
+//   );
+//   res.setHeader(
+//     "Access-Control-Allow-Headers",
+//     "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
+//   );
+//   res.setHeader("Cache-Control", "no-cache");
+//   next();
+// });
 
 const db = mysql.createConnection({
   host: constants.development.host,
@@ -92,7 +92,7 @@ const shopStorage = multer.diskStorage({
     cb(null, Date.now() + file.originalname);
   },
 });
-initdb()
+initdb();
 const userStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "../client/public/Users/Images");
@@ -120,87 +120,75 @@ const upload = multer({
 //static images folder
 app.use("/Images", express.static("./Images"));
 
-//routers middleware
-// app.use("/", userRoutes);
-// app.post("/register", (req, res) => {
-//   const username = req.body.username;
-//   console.log(username);
-//   const email = req.body.email;
-//   const password = req.body.password;
+// New Implementation
+app.post("/secureurl", async (req,res)=> {
 
-//   db.query(
-//     "INSERT INTO Users (name, email, password) VALUES (?, ?, ?)",
-//     [username, email, password],
-//     (err, result) => {
-//       if (err) {
-//         console.log(err);
-//       } else {
-//         res.send({ success: true, result });
-//       }
-//     }
-//   );
-// });
+    const region = "us-east-1"
+    const bucketName = "etsyawsbucket"
+    const accessKeyId = "AKIAZP3IZBQZ72KY5MV2"
+    const secretAccessKey = "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"
+    
 
-app.post("/register", (req, res) => {
-  console.log("In customer reg API");
-  let msg = req.body;
-  msg.route = "registerUser";
-  kafka.make_request("accounts", msg, function (err, results) {
-    console.log(err);
-    console.log(results);
-    if (err) {
-      res.status(err.status).send(err);
-    } else {
-      // if (results.status == 200) {
-      //   const token = jwt.sign(
-      //     { _id: results.user.user_id, category: "customer" },
-      //     secret,
-      //     {
-      //       expiresIn: 1008000,
-      //     }
-      //   );
-      //   var jwtToken = "JWT " + token;
-      //   res.status(results.status).send({
-      //     ...results,
-      //     Token: jwtToken,
-      //   });
-      // }
-      res.status(results.status).send(results);
-    }
-  });
-})
+    const s3 = new aws.S3({
+    region,
+    accessKeyId,
+    secretAccessKey,
+    signatureVersion: 'v4'
+    })
 
-app.post("/signin", (req, res) => {
-  let msg = req.body;
-  msg.route = "login";
-  kafka.make_request("accounts", msg, function (err, results) {
-    if (err) {
-      res.status(err.status).send(err);
-    } else {
-      // if (results.status == 200) {
-      //   const token = jwt.sign(
-      //     { _id: results.user.user_id, category: req.body.category },
-      //     secret,
-      //     {
-      //       expiresIn: 1008000,
-      //     }
-      //   );
-      //   var jwtToken = "JWT " + token;
-      //   res.status(results.status).send({
-      //     ...results,
-      //     Token: jwtToken,
-      //   });
-      // } else {
-        res.status(results.status).send(results);
-      // }
-    }
-  });
+    const rawBytes = await randomBytes(16)
+    const imageName = rawBytes.toString('hex')
+    const params = ({
+        Bucket: bucketName,
+        Key: imageName,
+        Expires: 300
+    })
+    const uploadURL = await s3.getSignedUrlPromise('putObject', params)
+    console.log("URL ----"+uploadURL);
+    res.send({uploadURL})
+});
+
+app.post("/register", async (req, res) => {
+  const username = req.body.username;
+  console.log(username);
+  const email = req.body.email;
+  const password = req.body.password;
+
+  var newuserobject = { name: username, email, password };
+  var userInstance = ModelFactory.getUserInstance();
+  var savedItem = await userInstance.create(newuserobject);
+  return res.json({ success: true, result: savedItem }).status(200);
+});
+
+app.get("/signin", async (req, res) => {
+  if (req.session.user) {
+    res.send({ loggedIn: true, user: req.session.user });
+  } else {
+    res.send({ loggedIn: false });
+  }
+});
+
+app.post("/signin", async (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  console.log("In login post req");
+  // console.log(email + " " + password + " email body");
+  var userInstance = ModelFactory.getUserInstance();
+  var result = await userInstance.find({ email, password });
+  if (result.length > 0) {
+    res.cookie("user", result[0].name, {
+      maxAge: 900000,
+      httpOnly: false,
+      path: "/",
+    });
+    req.session.user = result;
+    res.send(result);
+  } else {
+    res.send({ message: "Invalid creds" });
+  }
 });
 
 app.get("/user", async (req, res) => {
-  var userInstance = ModelFactory.getUserInstance()
-  let users = await userInstance.find({})
-  return res.json(users).status(200)
   console.log("hello" + req.session);
   if (req.session.user) {
     res.send({ loggedIn: true, user: req.session.user });
@@ -209,36 +197,44 @@ app.get("/user", async (req, res) => {
   }
 });
 
-//Ramya Did it!
-app.post("/findShopDuplicates", (req, res) => {
-  console.log("Find Shop Duplicates!");
-  let msg = req.body;
-  msg.route = "findDuplicateShop";
-  kafka.make_request("shop", msg, function (err, results) {
-    if (err) {
-      res.status(err.status).send(err);
-    } else {
-      res.status(results.status).send(results);
-    }
-  });
+app.post("/findShopDuplicates", async (req, res) => {
+  const shopName = req.body.shopName;
+  console.log("In findShopDuplicates " + shopName);
+  var userInstance = ModelFactory.getUserInstance();
+  var result = await userInstance.find({ shopName });
+
+  console.log(result.length);
+  if (result.length !== 0) {
+    res.send({
+      message: "duplicate",
+    });
+    console.log("In shops db shop name found");
+  } else {
+    res.send({
+      message: "No duplicates",
+    });
+    console.log("In shops db and no shop name found");
+  }
 });
 
-// Ramya did it #2
-app.post("/createShop/:id", (req, res) => {
-  // console.log("HDHHAD");
+app.post("/createShop/:id", async (req, res) => {
   const shopName = req.body.shopName;
   const id = req.params.id;
   console.log("In create shop " + id);
-  let msg = req.body;
-  msg.route = "createAShop";
-  kafka.make_request("shop", msg, function (err, results) {
-    if (err) {
-      res.status(err.status).send(err);
-    } else {
-      res.status(results.status).send(results);
-    }
-  });
+  var shopInstance = ModelFactory.getShopInstance();
+  var result = await shopInstance.findOneAndUpdate(
+    { id },
+    { $set: { shopName } }
+  );
+  if (err) {
+    console.log(err);
+  } else {
+    console.log(result);
+    // res.send(result);
+    res.send("Shops Value Inserted in user successfully");
+  }
 });
+// New Implementation
 
 const addProduct = async (req, res) => {
   const userId = req.params.id;
@@ -248,16 +244,20 @@ const addProduct = async (req, res) => {
   const itemPrice = req.body.price;
   const itemCount = req.body.count;
 
-const item = new Items ({
-  userId, itemName, itemPrice, itemDescription, itemCount, itemImage
-
-})
-await item.save();
-if (err) {
-  res.status(err.status).send(err);
-} else {
-  res.status(results.status).send(results);
-}
+  const item = new Items({
+    userId,
+    itemName,
+    itemPrice,
+    itemDescription,
+    itemCount,
+    itemImage,
+  });
+  await item.save();
+  if (err) {
+    res.status(err.status).send(err);
+  } else {
+    res.status(results.status).send(results);
+  }
 
   // db.query(
   //   "INSERT INTO Items (userId, itemName, itemPrice, itemDescription, itemCount, itemImage) VALUES (?, ?, ?, ?, ?, ?)",
@@ -291,19 +291,27 @@ app.post("/addProduct/:id", async (req, res) => {
       const itemCategory = req.body.itemCategory;
       console.log(itemImage);
       console.log(itemName);
-      var item = { userId, itemName, itemDescription, itemPrice, itemCount, itemCategory }
+      var item = {
+        userId,
+        itemName,
+        itemDescription,
+        itemPrice,
+        itemCount,
+        itemCategory,
+      };
       var itemsInstance = ModelFactory.getItemInstance();
       var savedItem = await itemsInstance.create(item);
-      return res.json(savedItem).status(200)
+      return res.json(savedItem).status(200);
     });
-  } catch{
-  (err, result) => {
-        if (err) {
-          return res.json(err).status(400)
-        }
-}}}
-);
-// app.get("/getItemById/:itemId", (req, res) => {
+  } catch {
+    (err, result) => {
+      if (err) {
+        return res.json(err).status(400);
+      }
+    };
+  }
+});
+// app.get("/getItemById/:itemId", async (req, res) => {
 //   const id = req.params.itemId;
 //   db.query("SELECT * FROM Items WHERE itemId=?", id, (err, result) => {
 //     console.log(result);
@@ -316,7 +324,7 @@ app.post("/addProduct/:id", async (req, res) => {
 // });
 
 app.post("/getAllProducts/:id", async (req, res) => {
-  var itemInstance = ModelFactory.getItemInstance()
+  var itemInstance = ModelFactory.getItemInstance();
   const id = req.params.id;
   const limit = req.body.limit ? parseInt(req.body.limit) : 100;
   const skip = parseInt(req.body.skip);
@@ -328,16 +336,20 @@ app.post("/getAllProducts/:id", async (req, res) => {
 
   if (term) {
     console.log("In term");
-    var query = { itemName : {$regex: term}}
-    var  results = await itemInstance.find(query).skip(skip).limit(limit)
-    return res.status(200).json({ success: true, results, postSize: results.length });
+    var query = { itemName: { $regex: term } };
+    var results = await itemInstance.find(query).skip(skip).limit(limit);
+    return res
+      .status(200)
+      .json({ success: true, results, postSize: results.length });
   } else {
-    var  results = await itemInstance.find({userId: id})
-    return res.status(200).json({ success: true, results, postSize: results.length });
+    var results = await itemInstance.find({ userId: id });
+    return res
+      .status(200)
+      .json({ success: true, results, postSize: results.length });
   }
 });
 
-// app.get("/getItemById/:itemId", (req, res) => {
+// app.get("/getItemById/:itemId", async (req, res) => {
 //   const id = req.params.itemId;
 //   db.query("SELECT * FROM Items WHERE itemId=?", id, (err, result) => {
 //     console.log(result);
@@ -349,14 +361,14 @@ app.post("/getAllProducts/:id", async (req, res) => {
 //   });
 // });
 
-app.get("/getItemById/:itemId", (req, res) => {
+app.get("/getItemById/:itemId", async (req, res) => {
   const id = req.params.itemId;
-  var itemInstance = ModelFactory.getItemInstance()
-  var  results = await itemInstance.find({itemId: id})
+  var itemInstance = ModelFactory.getItemInstance();
+  var results = await itemInstance.find({ itemId: id });
   return res.status(200).json(results);
 });
 
-app.put("/updateItemById/:itemId", (req, res) => {
+app.put("/updateItemById/:itemId", async (req, res) => {
   const id = req.params.itemId;
   // const userId = req.params.id;
   const itemName = req.body.itemName;
@@ -369,11 +381,20 @@ app.put("/updateItemById/:itemId", (req, res) => {
   console.log(itemDescriprion);
   console.log(itemName);
   console.log(id);
-  let itemInstance = ModelFactory.getItemInstance()
-  let results = await itemInstance.findOneAndUpdate({itemId}, {$set: {
-    itemName, itemDescriprion, itemPrice, itemCount, itemCategory
-  }})
-  return res.json({success: true, result: results}).statusCode(200)
+  let itemInstance = ModelFactory.getItemInstance();
+  let results = await itemInstance.findOneAndUpdate(
+    { itemId },
+    {
+      $set: {
+        itemName,
+        itemDescriprion,
+        itemPrice,
+        itemCount,
+        itemCategory,
+      },
+    }
+  );
+  return res.json({ success: true, result: results }).statusCode(200);
   // db.query(
   //   "UPDATE Items SET itemName=?, itemPrice=?, itemDescription=?, itemCount=?, itemCategory=? WHERE itemId=?",
   //   [itemName, itemPrice, itemDescriprion, itemCount, itemCategory, id],
@@ -389,10 +410,10 @@ app.put("/updateItemById/:itemId", (req, res) => {
   // );
 });
 
-app.put("/updateItemImageById/:itemId", (req, res) => {
+app.put("/updateItemImageById/:itemId", async (req, res) => {
   try {
     let upload = multer({ storage: storage }).single("itemImage");
-    upload(req, res, function (err) {
+    upload(req, res, async function (err) {
       if (!req.file) {
         return res.send("Please select an image to upload");
       } else if (err instanceof multer.MulterError) {
@@ -407,8 +428,11 @@ app.put("/updateItemImageById/:itemId", (req, res) => {
       console.log(id);
       console.log(itemImage);
       var itemInstance = ModelFactory.getItemInstance();
-      var result = await itemInstance.findOneAndUpdate({itemId}, {$set: {itemImage}})
-      return res.json({success: true, result})
+      var result = await itemInstance.findOneAndUpdate(
+        { itemId },
+        { $set: { itemImage } }
+      );
+      return res.json({ success: true, result });
       // db.query(
       //   "UPDATE Items SET itemImage=? WHERE itemId=?",
       //   [itemImage, id],
@@ -428,12 +452,12 @@ app.put("/updateItemImageById/:itemId", (req, res) => {
   }
 });
 
-app.get("/getShopById/:userId", (req, res) => {
+app.get("/getShopById/:userId", async (req, res) => {
   console.log("In get shop by id");
   const userId = req.params.userId;
-  var userInstance = ModelFactory.getUserInstance()
-  var  results = await userInstance.find({id: userId})
-  return res.status(200).json({success: true, result: results});
+  var userInstance = ModelFactory.getUserInstance();
+  var results = await userInstance.find({ id: userId });
+  return res.status(200).json({ success: true, result: results });
 
   // db.query("SELECT * FROM Users WHERE id=?", userId, (err, result) => {
   //   if (err) {
@@ -446,11 +470,11 @@ app.get("/getShopById/:userId", (req, res) => {
   // });
 });
 
-app.put("/updateShopImageById/:id", (req, res) => {
+app.put("/updateShopImageById/:id", async (req, res) => {
   console.log("In edit shop details put method");
   try {
     let upload = multer({ storage: shopStorage }).single("shopImage");
-    upload(req, res, function (err) {
+    upload(req, res, async function (err) {
       if (!req.file) {
         return res.send("Please select an image to upload");
       } else if (err instanceof multer.MulterError) {
@@ -466,8 +490,11 @@ app.put("/updateShopImageById/:id", (req, res) => {
       console.log(shopImage);
 
       var userInstance = ModelFactory.getUserInstance();
-      var result = await userInstance.findOneAndUpdate({id: userId}, {$set: {shopImage}})
-      return res.json({success: true, result})
+      var result = await userInstance.findOneAndUpdate(
+        { id: userId },
+        { $set: { shopImage } }
+      );
+      return res.json({ success: true, result });
 
       // db.query(
       //   "UPDATE Users SET shopImage=? WHERE id=?",
@@ -487,14 +514,14 @@ app.put("/updateShopImageById/:id", (req, res) => {
   }
 });
 
-app.get("/getSearchItems/:searchValue", (req, res) => {
+app.get("/getSearchItems/:searchValue", async (req, res) => {
   console.log("get Search Items -------------------------------");
   const searchValue = req.params.searchValue;
   console.log(searchValue);
-
-  var query = { itemName : {$regex:searchValue}}
-    var  result = await itemInstance.find(query).skip(skip).limit(limit)
-    return res.json({success: true, result})
+  var itemInstance = ModelFactory.getItemInstance();
+  var query = { itemName: { $regex: searchValue } };
+  var result = await itemInstance.find(query).skip(skip).limit(limit);
+  return res.json({ success: true, result });
 
   // db.query(
   //   `SELECT * FROM Items WHERE itemName REGEXP '${searchValue}'`,
@@ -512,7 +539,7 @@ app.get("/getSearchItems/:searchValue", (req, res) => {
 app.put("/updateUser/:id", async (req, res) => {
   try {
     let upload = multer({ storage: userStorage }).single("userImage");
-    upload(req, res, function (err) {
+    upload(req, res, async function (err) {
       if (!req.file) {
         return res.send("Please select an image to upload");
       } else if (err instanceof multer.MulterError) {
@@ -520,7 +547,6 @@ app.put("/updateUser/:id", async (req, res) => {
       } else if (err) {
         return res.send(err);
       }
-
       const userId = req.params.id;
       const userName = req.body.userName;
       const gender = req.body.gender;
@@ -529,8 +555,27 @@ app.put("/updateUser/:id", async (req, res) => {
       const userImage = req.file.filename;
       const about = req.body.about;
 
+      let body = req.body;
       console.log(userImage);
       console.log(userName);
+
+      let userInstance = ModelFactory.getUserInstance();
+      let userObj = {
+        name: userName,
+        profilePic: userImage,
+        dob: dob,
+        gender: gender,
+        // fullAddress: address,
+        city: city,
+        about: about,
+        phone_number: phoneNo,
+      };
+      let result = await userInstance.findOneAndUpdate(
+        { id: userId },
+        { $set: userObj }
+      );
+      return res.send({ message: "success", result });
+
       // db.query(
       //   "UPDATE Users set name = ?, city  = ?, dob  = ?, gender  = ?, about  = ?, profilePic=? where id = ? ",
       //   [userName, city, dob, gender, about, userImage, userId],
@@ -549,11 +594,11 @@ app.put("/updateUser/:id", async (req, res) => {
     console.log(err);
   }
 });
-app.get("/getItems", (req, res) => {
+app.get("/getItems", async (req, res) => {
   console.log("Getting all products in home");
-  var itemInstance = ModelFactory.getItemInstance()
-  var  results = await itemInstance.find({})
-  return res.status(200).json({success: true,result:results});
+  var itemInstance = ModelFactory.getItemInstance();
+  var results = await itemInstance.find({});
+  return res.status(200).json({ success: true, result: results });
 
   // db.query("SELECT * FROM Items", (err, result) => {
   //   console.log(result);
@@ -566,15 +611,15 @@ app.get("/getItems", (req, res) => {
   // });
 });
 
-app.post("/addFavourite", (req, res) => {
+app.post("/addFavourite", async (req, res) => {
   const userId = req.body.userId;
   console.log(userId);
   const itemId = req.body.itemId;
 
-      var item = { userId, itemId }
-      var favouriteInstance = ModelFactory.getFavoriteInstance();
-      var savedItem = await favouriteInstance.create(item);
-      return res.json(savedItem).status(200)
+  var item = { userId, itemId };
+  var favouriteInstance = ModelFactory.getFavoriteInstance();
+  var savedItem = await favouriteInstance.create(item);
+  return res.json(savedItem).status(200);
 
   // db.query(
   //   "INSERT INTO Favourites (itemId, userId) VALUES (?, ?)",
@@ -591,16 +636,16 @@ app.post("/addFavourite", (req, res) => {
   // );
 });
 
-app.get("/getFavourites/:id", (req, res) => {
+app.get("/getFavourites/:id", async (req, res) => {
   const userId = req.params.id;
   console.log(userId);
   console.log("Getting all favoutrites in home");
   var favouriteInstance = ModelFactory.getFavoriteInstance(),
-  itemInstance = ModelFactory.getItemInstance();
+    itemInstance = ModelFactory.getItemInstance();
 
-  var favoriteItems = await favouriteInstance.find({userId});
-  var itemIds = _.map(favoriteItems, 'itemId')
-  var result = await itemInstance.find({itemId : {$in: itemIds}})
+  var favoriteItems = await favouriteInstance.find({ userId });
+  var itemIds = _.map(favoriteItems, "itemId");
+  var result = await itemInstance.find({ itemId: { $in: itemIds } });
   res.send({ success: true, result });
   return;
   //db.query(
@@ -618,13 +663,13 @@ app.get("/getFavourites/:id", (req, res) => {
   // );
 });
 
-app.delete("/deleteFavourite/:itemId/:userId", (req, res) => {
+app.delete("/deleteFavourite/:itemId/:userId", async (req, res) => {
   var favouriteInstance = ModelFactory.getFavoriteInstance();
   const itemId = req.params.itemId;
   const userId = req.params.userId;
   console.log("Deleting Fav Item");
-  var result = await favouriteInstance.remove({itemId,userId});
-  return res.send({ success: true, result});
+  var result = await favouriteInstance.remove({ itemId, userId });
+  return res.send({ success: true, result });
   // db.query(
   //   "delete FROM Favourites WHERE itemId =? and userId =? ",
   //   [itemId, userId],
@@ -640,15 +685,15 @@ app.delete("/deleteFavourite/:itemId/:userId", (req, res) => {
   // );
 });
 
-app.post("/addCartProduct/:userId", (req, res) => {
+app.post("/addCartProduct/:userId", async (req, res) => {
   const userId = req.params.userId;
   const items = req.body.items;
   const orderId = req.body.orderId;
   const price = req.body.price;
-      var item = { itemId: items, orderId, price, userId }
-      var cartInstance = ModelFactory.getCartInstance();
-      var cartItem = await cartInstance.create(item);
-      return res.json({ success: true, result: cartItem}).status(200)
+  var item = { itemId: items, orderId, price, userId };
+  var cartInstance = ModelFactory.getCartInstance();
+  var cartItem = await cartInstance.create(item);
+  return res.json({ success: true, result: cartItem }).status(200);
 
   // db.query(
   //   "INSERT INTO Carts (items, orderId, price, userId) VALUES (?, ?, ?, ?)",
@@ -665,17 +710,17 @@ app.post("/addCartProduct/:userId", (req, res) => {
   // );
 });
 
-app.get("/getFinalCartProducts/:userId", (req, res) => {
+app.get("/getFinalCartProducts/:userId", async (req, res) => {
   const userId = req.params.userId;
   console.log("Getting cart products in cart");
 
   console.log("Getting all favoutrites in home");
   var cartInstance = ModelFactory.getCartInstance(),
-  itemInstance = ModelFactory.getItemInstance();
+    itemInstance = ModelFactory.getItemInstance();
 
-  var cartItems = await cartInstance.find({userId});
-  var itemIds = _.map(cartItems, 'itemId')
-  var result = await itemInstance.find({itemId : {$in: itemIds}})
+  var cartItems = await cartInstance.find({ userId });
+  var itemIds = _.map(cartItems, "itemId");
+  var result = await itemInstance.find({ itemId: { $in: itemIds } });
   res.send({ success: true, result });
   return;
   // db.query(
@@ -694,7 +739,7 @@ app.get("/getFinalCartProducts/:userId", (req, res) => {
   // );
 });
 
-app.put("/updateCartQuantity/:userId", (req, res) => {
+app.put("/updateCartQuantity/:userId", async (req, res) => {
   const userId = req.params.userId;
   // const userId = req.params.id;
   const itemId = req.body.itemId;
@@ -706,8 +751,11 @@ app.put("/updateCartQuantity/:userId", (req, res) => {
   // console.log(id);
 
   var cartInstance = ModelFactory.getCartInstance();
-      var result = await cartInstance.findOneAndUpdate({userId,itemId}, {$set: {qty}})
-      return res.json({success: true, result})
+  var result = await cartInstance.findOneAndUpdate(
+    { userId, itemId },
+    { $set: { qty } }
+  );
+  return res.json({ success: true, result });
 
   // db.query(
   //   "UPDATE Carts SET qty = ? WHERE itemId=? AND userId = ?",
@@ -724,13 +772,13 @@ app.put("/updateCartQuantity/:userId", (req, res) => {
   // );
 });
 
-app.get("/getQtyFromCart/:userid/:itemId", (req, res) => {
+app.get("/getQtyFromCart/:userid/:itemId", async (req, res) => {
   const userId = req.params.userid;
   const itemId = req.params.itemId;
   console.log("Getting all cart products in home");
-  var cartInstance = ModelFactory.getCartInstance()
-  var  results = await cartInstance.find({itemId,userId})
-  return res.status(200).json({success: true,result:results});
+  var cartInstance = ModelFactory.getCartInstance();
+  var results = await cartInstance.find({ itemId, userId });
+  return res.status(200).json({ success: true, result: results });
 
   // db.query(
   //   "select qty from Carts where userId=? AND itemId=?",
@@ -746,12 +794,12 @@ app.get("/getQtyFromCart/:userid/:itemId", (req, res) => {
   //   }
   // );
 });
-app.get("/getPurchases/:UserId", (req, res) => {
+app.get("/getPurchases/:UserId", async (req, res) => {
   const userId = req.params.UserId;
   console.log("Get purchased items");
-  var purchaseInstance = ModelFactory.getPurchaseInstance()
-  var  results = await purchaseInstance.find({userId}).sort({createdOn:1})
-  return res.status(200).json({success: true,result:results});
+  var purchaseInstance = ModelFactory.getPurchaseInstance();
+  var results = await purchaseInstance.find({ userId }).sort({ createdOn: 1 });
+  return res.status(200).json({ success: true, result: results });
   // db.query(
   //   "SELECT * FROM Carts WHERE userId=? order by cartId desc limit 0, 1 ",
   //   [userid],
@@ -766,7 +814,7 @@ app.get("/getPurchases/:UserId", (req, res) => {
   // );
 });
 
-app.put("/updateItemById/:itemId", (req, res) => {
+app.put("/updateItemById/:itemId", async (req, res) => {
   const id = req.params.itemId;
   // const userId = req.params.id;
   const itemName = req.body.itemName;
@@ -780,9 +828,12 @@ app.put("/updateItemById/:itemId", (req, res) => {
   console.log(itemName);
   console.log(id);
 
-      var itemInstance = ModelFactory.getItemInstance();
-      var result = await itemInstance.findOneAndUpdate({itemId}, {$set: {itemName,itemPrice,itemDescription,itemCount,itemCategory}})
-      return res.json({success: true, result})
+  var itemInstance = ModelFactory.getItemInstance();
+  var result = await itemInstance.findOneAndUpdate(
+    { itemId },
+    { $set: { itemName, itemPrice, itemDescription, itemCount, itemCategory } }
+  );
+  return res.json({ success: true, result });
 
   // db.query(
   //   "UPDATE Items SET itemName=?, itemPrice=?, itemDescription=?, itemCount=?, itemCategory=? WHERE itemId=?",
