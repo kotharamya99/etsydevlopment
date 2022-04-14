@@ -14,7 +14,7 @@ function editShop({ editShopPage, userId }) {
     console.log("Update form image");
     const formData = new FormData();
     formData.append("shopImage", shopImage);
-    Axios.put(
+    axiosInstance().put(
       "/updateShopImageById/" + userId,
       formData
     ).then((response) => {
