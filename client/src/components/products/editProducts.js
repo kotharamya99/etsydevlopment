@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../features/userSlice";
 import CloseLogin from "../closeLogin";
+import axiosInstance from "../../axiosInstance";
 
 function editProducts({ setShowProductsEditPage, products, itemId }) {
   const user = useSelector(selectUser);
@@ -26,7 +27,7 @@ function editProducts({ setShowProductsEditPage, products, itemId }) {
   const editItem = (e) => {
     // e.preventDefault();
     console.log("Inedit client axios");
-    Axios.put(
+    axiosInstance().put(
       "/updateItemById/" + itemId,
       itemDetails
     ).then((response) => {
@@ -41,7 +42,7 @@ function editProducts({ setShowProductsEditPage, products, itemId }) {
   }, []);
 
   const fetchItemDetails = () => {
-    Axios.get("/getItemById/" + itemId).then(
+    axiosInstance().get("/getItemById/" + itemId).then(
       (response) => {
         if (response) {
           console.log(response.data[0]);
