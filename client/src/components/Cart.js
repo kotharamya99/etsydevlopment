@@ -54,7 +54,7 @@ const CartScreen = () => {
     localStorage.setItem("purchase", JSON.stringify(finalCartProducts));
     window.location.pathname = "/purchase";
 
-    // Axios.post("{ip_address}/addCartProduct/" + user.id, {
+    // axiosInstance().post("{ip_address}/addCartProduct/" + user.id, {
     //   items: JSON.stringify(finalCartProducts),
     //   orderId: Math.floor(Math.random() * 1000),
     //   price: getCartSubTotal(),
