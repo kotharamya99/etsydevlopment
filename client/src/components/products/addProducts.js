@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { selectUser } from "../../features/userSlice";
 import CloseLogin from "../closeLogin";
 import CategoryComponent from "./CategoryComponent";
-
+import axiosInstance from "../../axiosInstance"
 function addProducts({ setShowProductsAddPage }) {
   const user = useSelector(selectUser);
   const [itemName, setItemName] = useState("");
@@ -37,7 +37,7 @@ function addProducts({ setShowProductsAddPage }) {
     //   itemPrice,
     // };
 
-    Axios.post("http://3.95.28.170:4000/addProduct/" + user.id, formData, {
+    axiosInstance().post("http://3.95.28.170:4000/addProduct/" + user.id, formData, {
       headers: { "content-Type": "multipart/form-data" },
     }).then((response) => {
       console.warn(response);
