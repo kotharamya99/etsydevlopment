@@ -6,7 +6,7 @@ import { activeShop, selectUser, updateUser } from "../features/userSlice";
 import Navbar from "./Navbar";
 import Hoverbar from "./Hoverbar";
 import ip_address from "../config";
-
+import axiosInstance from "../axiosInstance";
 function checkShopName() {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
@@ -21,7 +21,7 @@ function checkShopName() {
       setError("Minimum 4 characters required");
     } else {
       setError("Available");
-      Axios.post(`${ip_address}/findShopDuplicates/`, {
+      axiosInstance().post(`${ip_address}/findShopDuplicates/`, {
         shopName: shopName,
       })
         .then((response) => {
@@ -38,7 +38,7 @@ function checkShopName() {
   };
 
   const handleCreateShop = () => {
-    Axios.post(`${ip_address}/createShop/` + user.id, {
+    axiosInstance().post(`${ip_address}/createShop/` + user.id, {
       shopName: shopName,
     }).then((response) => {
       if (response.data) {
