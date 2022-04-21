@@ -11,16 +11,17 @@ const jwt = require("jsonwebtoken");
 const cookieParser = express("cocookie-parser");
 const multer = require("multer");
 const path = require("path");
+const kafka = require("./kafka/client");
 
 //import routes
-const userRoutes = require("./routes/user");
+// const userRoutes = require("./routes/user");
 const { count } = require("console");
 
 const app = express();
 
 app.use(
   cors({
-    origin: ["http://54.196.9.17:3000"],
+    origin: ["http://localhost:3000"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -46,7 +47,7 @@ app.use(
 );
 
 app.use(function (req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", "http://54.196.9.17:3000");
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -118,62 +119,112 @@ app.use("/Images", express.static("./Images"));
 
 //routers middleware
 // app.use("/", userRoutes);
+// app.post("/register", (req, res) => {
+//   const username = req.body.username;
+//   console.log(username);
+//   const email = req.body.email;
+//   const password = req.body.password;
+
+//   db.query(
+//     "INSERT INTO Users (name, email, password) VALUES (?, ?, ?)",
+//     [username, email, password],
+//     (err, result) => {
+//       if (err) {
+//         console.log(err);
+//       } else {
+//         res.send({ success: true, result });
+//       }
+//     }
+//   );
+// });
+
 app.post("/register", (req, res) => {
-  const username = req.body.username;
-  console.log(username);
-  const email = req.body.email;
-  const password = req.body.password;
-
-  db.query(
-    "INSERT INTO Users (name, email, password) VALUES (?, ?, ?)",
-    [username, email, password],
-    (err, result) => {
-      if (err) {
-        console.log(err);
-      } else {
-        res.send({ success: true, result });
-      }
+  console.log("In customer reg API");
+  let msg = req.body;
+  msg.route = "registerUser";
+  kafka.make_request("accounts", msg, function (err, results) {
+    console.log(err);
+    console.log(results);
+    if (err) {
+      res.status(err.status).send(err);
+    } else {
+      // if (results.status == 200) {
+      //   const token = jwt.sign(
+      //     { _id: results.user.user_id, category: "customer" },
+      //     secret,
+      //     {
+      //       expiresIn: 1008000,
+      //     }
+      //   );
+      //   var jwtToken = "JWT " + token;
+      //   res.status(results.status).send({
+      //     ...results,
+      //     Token: jwtToken,
+      //   });
+      // }
+      res.status(results.status).send(results);
     }
-  );
-});
-
-app.get("/signin", (req, res) => {
-  if (req.session.user) {
-    res.send({ loggedIn: true, user: req.session.user });
-  } else {
-    res.send({ loggedIn: false });
-  }
-});
+  });
+})
 
 app.post("/signin", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  console.log("In login post req");
-  // console.log(email + " " + password + " email body");
-  db.query(
-    "SELECT * FROM Users WHERE email = ? AND password = ?",
-    [email, password],
-    (err, result) => {
-      console.log(
-        "res length------------" + result[0] + "=======" + result.length
-      );
-      if (err) {
-        res.send({ err: err });
-      }
-      if (result.length > 0) {
-        res.cookie("user", result[0].name, {
-          maxAge: 900000,
-          httpOnly: false,
-          path: "/",
-        });
-        req.session.user = result;
-        res.send(result);
-      } else {
-        res.send({ message: "Invalid creds" });
-      }
+  let msg = req.body;
+  msg.route = "login";
+  kafka.make_request("accounts", msg, function (err, results) {
+    if (err) {
+      res.status(err.status).send(err);
+    } else {
+      // if (results.status == 200) {
+      //   const token = jwt.sign(
+      //     { _id: results.user.user_id, category: req.body.category },
+      //     secret,
+      //     {
+      //       expiresIn: 1008000,
+      //     }
+      //   );
+      //   var jwtToken = "JWT " + token;
+      //   res.status(results.status).send({
+      //     ...results,
+      //     Token: jwtToken,
+      //   });
+      // } else {
+        res.status(results.status).send(results);
+      // }
     }
-  );
+  });
 });
+
+// app.post("/signin", (req, res) => {
+//   const email = req.body.email;
+//   const password = req.body.password;
+//   console.log("In login post req");
+//   // console.log(email + " " + password + " email body");
+//   db.query(
+//     "SELECT * FROM Users WHERE email = ? AND password = ?",
+//     [email, password],
+//     (err, result) => {
+//       console.log(
+//         "res length------------" + result[0] + "=======" + result.length
+//       );
+//       if (err) {
+//         res.send({ err: err });
+//       }
+//       if (result.length > 0) {
+//         res.cookie("user", result[0].name, {
+//           maxAge: 900000,
+//           httpOnly: false,
+//           path: "/",
+//         });
+//         req.session.user = result;
+//         res.send(result);
+//       } else {
+//         res.send({ message: "Invalid creds" });
+//       }
+//     }
+//   );
+// });
+
+
 
 app.get("/user", (req, res) => {
   console.log("hello" + req.session);
@@ -184,47 +235,78 @@ app.get("/user", (req, res) => {
   }
 });
 
+//Ramya Did it!
 app.post("/findShopDuplicates", (req, res) => {
-  const shopName = req.body.shopName;
-  console.log("In findShopDuplicates " + shopName);
-  db.query(
-    "SELECT * FROM Users WHERE shopName=?",
-    [shopName],
-    (err, result) => {
-      console.log(result.length);
-      if (result.length !== 0) {
-        res.send({
-          message: "duplicate",
-        });
-        console.log("In shops db shop name found");
-      } else {
-        res.send({
-          message: "No duplicates",
-        });
-        console.log("In shops db and no shop name found");
-      }
+  console.log("Find Shop Duplicates!");
+  let msg = req.body;
+  msg.route = "findDuplicateShop";
+  kafka.make_request("shop", msg, function (err, results) {
+    if (err) {
+      res.status(err.status).send(err);
+    } else {
+      res.status(results.status).send(results);
     }
-  );
+  });
 });
 
+// app.post("/findShopDuplicates", (req, res) => {
+//   const shopName = req.body.shopName;
+//   console.log("In findShopDuplicates " + shopName);
+//   db.query(
+//     "SELECT * FROM Users WHERE shopName=?",
+//     [shopName],
+//     (err, result) => {
+//       console.log(result.length);
+//       if (result.length !== 0) {
+//         res.send({
+//           message: "duplicate",
+//         });
+//         console.log("In shops db shop name found");
+//       } else {
+//         res.send({
+//           message: "No duplicates",
+//         });
+//         console.log("In shops db and no shop name found");
+//       }
+//     }
+//   );
+// });
+
+// Ramya did it #2
 app.post("/createShop/:id", (req, res) => {
+  // console.log("HDHHAD");
   const shopName = req.body.shopName;
   const id = req.params.id;
   console.log("In create shop " + id);
-  db.query(
-    "UPDATE Users SET shopName=? WHERE id=?",
-    [shopName, id],
-    (err, result) => {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log(result);
-        // res.send(result);
-        res.send("Shops Value Inserted in user successfully");
-      }
+  let msg = req.body;
+  msg.route = "createAShop";
+  kafka.make_request("shop", msg, function (err, results) {
+    if (err) {
+      res.status(err.status).send(err);
+    } else {
+      res.status(results.status).send(results);
     }
-  );
+  });
 });
+
+// app.post("/createShop/:id", (req, res) => {
+//   const shopName = req.body.shopName;
+//   const id = req.params.id;
+//   console.log("In create shop " + id);
+//   db.query(
+//     "UPDATE Users SET shopName=? WHERE id=?",
+//     [shopName, id],
+//     (err, result) => {
+//       if (err) {
+//         console.log(err);
+//       } else {
+//         console.log(result);
+//         // res.send(result);
+//         res.send("Shops Value Inserted in user successfully");
+//       }
+//     }
+//   );
+// });
 
 const addProduct = async (req, res) => {
   const userId = req.params.id;

@@ -16,7 +16,7 @@ const editShopImage = ({ editShopPage }) => {
     formData.append("shopImage", shopImage);
     console.log("Inedit client axios");
     Axios.put(
-      "http://54.196.9.17:4000/updateShopImageById/" + user.id,
+      "/updateShopImageById/" + user.id,
       formData
     ).then((response) => {
       if (response.data.success) {
@@ -34,7 +34,7 @@ const editShopImage = ({ editShopPage }) => {
   }, []);
 
   const fetchItemDetails = () => {
-    Axios.get("http://54.196.9.17:4000/getShopById/" + user.id).then(
+    Axios.get("/getShopById/" + user.id).then(
       (response) => {
         if (response) {
           console.log(response.data.result[0].shopImage);

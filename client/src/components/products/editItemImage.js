@@ -15,7 +15,7 @@ function editItemImage({ setShowProductsEditPage, products, itemId }) {
     formData.append("itemImage", itemImage);
     console.log("Inedit client axios");
     Axios.put(
-      "http://54.196.9.17:4000/updateItemImageById/" + itemId,
+      "/updateItemImageById/" + itemId,
       formData
     ).then((response) => {
       if (response.data.success) {
@@ -30,7 +30,7 @@ function editItemImage({ setShowProductsEditPage, products, itemId }) {
   }, []);
 
   const fetchItemDetails = () => {
-    Axios.get("http://54.196.9.17:4000/getItemById/" + itemId).then(
+    Axios.get("/getItemById/" + itemId).then(
       (response) => {
         if (response) {
           setItemImage(response.data[0].itemImage);

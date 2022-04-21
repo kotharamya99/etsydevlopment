@@ -2,11 +2,12 @@
   "name": "server",
   "version": "1.0.0",
   "description": "Back-end",
+  "proxy": "http://127.0.0.1:4000",
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js"
   },
-  "author": "DivyaMaddipudi",
+  "author": "kotharamya",
   "license": "ISC",
   "dependencies": {
     "antd": "^4.19.1",
@@ -22,6 +23,7 @@
     "nodemon": "^2.0.15",
     "sequelize": "^6.17.0",
     "sequelize-cli": "^6.4.1",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "kafka-node": "^5.0.0"
   }
 }

@@ -27,7 +27,7 @@ function editProducts({ setShowProductsEditPage, products, itemId }) {
     // e.preventDefault();
     console.log("Inedit client axios");
     Axios.put(
-      "http://54.196.9.17:4000/updateItemById/" + itemId,
+      "/updateItemById/" + itemId,
       itemDetails
     ).then((response) => {
       if (response.data.success) {
@@ -41,7 +41,7 @@ function editProducts({ setShowProductsEditPage, products, itemId }) {
   }, []);
 
   const fetchItemDetails = () => {
-    Axios.get("http://54.196.9.17:4000/getItemById/" + itemId).then(
+    Axios.get("/getItemById/" + itemId).then(
       (response) => {
         if (response) {
           console.log(response.data[0]);

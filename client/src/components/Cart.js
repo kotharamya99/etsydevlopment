@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import CartItem from "./CartItem";
 import Axios from "axios";
+import ip_address from "../config";
 
 // Components
 // import CartItem from "../components/CartItem";
@@ -53,7 +54,7 @@ const CartScreen = () => {
     localStorage.setItem("purchase", JSON.stringify(finalCartProducts));
     window.location.pathname = "/purchase";
 
-    // Axios.post("http://54.196.9.17:4000/addCartProduct/" + user.id, {
+    // Axios.post("{ip_address}/addCartProduct/" + user.id, {
     //   items: JSON.stringify(finalCartProducts),
     //   orderId: Math.floor(Math.random() * 1000),
     //   price: getCartSubTotal(),

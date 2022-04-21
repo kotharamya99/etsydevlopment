@@ -12,7 +12,7 @@ function register({ setShowRegister }) {
   const addUser = (e) => {
     e.preventDefault();
     // localStorage.Item("preferedCurrency", userPreferedCurrency);
-    Axios.post("http://54.196.9.17:4000/register", {
+    Axios.post("/register", {
       email: email,
       username: username,
       password: password,

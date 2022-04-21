@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { activeShop, selectUser, updateUser } from "../features/userSlice";
 import Navbar from "./Navbar";
 import Hoverbar from "./Hoverbar";
+import ip_address from "../config";
 
 function checkShopName() {
   const dispatch = useDispatch();
@@ -20,7 +21,7 @@ function checkShopName() {
       setError("Minimum 4 characters required");
     } else {
       setError("Available");
-      Axios.post("http://54.196.9.17:4000/findShopDuplicates/", {
+      Axios.post(`${ip_address}/findShopDuplicates/`, {
         shopName: shopName,
       })
         .then((response) => {
@@ -37,7 +38,7 @@ function checkShopName() {
   };
 
   const handleCreateShop = () => {
-    Axios.post("http://54.196.9.17:4000/createShop/" + user.id, {
+    Axios.post(`${ip_address}/createShop/` + user.id, {
       shopName: shopName,
     }).then((response) => {
       if (response.data) {
