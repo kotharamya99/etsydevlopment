@@ -1,0 +1,48 @@
+{
+  "name": "etsy",
+  "description": "",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd backend && node app.js",
+    "heroku-postbuild": "cd frontend && npm install && npm run build",
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sharansantosh97/EtsyPrototype.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sharansantosh97/EtsyPrototype/issues"
+  },
+  "homepage": "https://github.com/sharansantosh97/EtsyPrototype#readme",
+  "type": "module",
+  "dependencies": {
+    "aws-sdk": "^2.1116.0",
+    "axios": "^0.26.1",
+    "bcrypt": "^5.0.1",
+    "bluebird": "^3.7.2",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "express": "^4.17.3",
+    "express-graphql": "^0.12.0",
+    "graphql": "^16.5.0",
+    "jsonwebtoken": "^8.5.1",
+    "kafka-node": "^5.0.0",
+    "kafkajs": "^1.16.0",
+    "lodash": "^4.17.21",
+    "mongodb": "^4.5.0",
+    "mongoose": "^6.2.9",
+    "mongoose-schema-to-graphql": "^2.8.1",
+    "multer": "^1.4.4",
+    "mysql": "^2.18.1",
+    "util": "^0.12.4",
+    "uuidv4": "^6.2.12"
+  },
+  "devDependencies": {
+    "eslint": "^8.12.0",
+    "eslint-plugin-react": "^7.29.4"
+  }
+}

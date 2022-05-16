@@ -1,0 +1,11 @@
+{
+    "DB":{
+        "host" : "",
+        "username" : "",
+        "password" : "",
+        "port" : "3306",
+        "database" : "EtsyDB"
+    },
+    "enableConnectPool": false,
+    "connectionLimit": 10
+}
