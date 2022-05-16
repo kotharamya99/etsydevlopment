@@ -1,0 +1,75 @@
+.gradient-custom {
+    /* fallback for old browsers */
+    background: #6a11cb;
+  
+    /* Chrome 10-25, Safari 5.1-6 */
+    background: -webkit-linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1));
+  
+    /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+    background: linear-gradient(to right, rgba(250, 17, 203, 1), rgba(37, 117, 252, 1))
+  }
+
+.login-btn
+{
+  height: 40px;
+  width: 100px;
+  background: #D10024;
+  color: #FFF;
+  font-weight: 700;
+  border: none;
+}
+
+body
+{
+    background-color: #fcce9d;
+}
+
+.LoginSection, .SignUpSection
+{
+    width: 400px;
+    background: #ffffff;
+    max-width: 400px;
+    margin: 0 auto 100px;
+    padding: 35px;
+    text-align: center;
+}
+
+.LGEmailSection input, .LGPasswordSection input, .SUEmailSection input, .SUPasswordSection input,.SUNameSection input
+{
+    font-family: Arial, Helvetica, sans-serif;  
+    background: #f2f2f2;
+    width: 100%;
+    border: 0;
+    margin: 0 0 16px;
+    padding: 17px;
+    box-sizing: border-box;
+    font-size: 15px;  
+}
+
+.button 
+{
+    width: 100%;
+    border: none;
+    border-width: 0 10px;
+    border-radius: 0;
+    background: #f2790f;
+    color: #ffffff;
+    font-size: 21px;
+    padding: 10px;
+}
+
+.ShowLogin 
+{ 
+    background:none; 
+    border:none; 
+    color: #FF0000;
+    font-size: 15px;
+}
+
+.ShowSignUp 
+{ 
+    background:none; 
+    border:none; 
+    color: #f2790f;
+    font-size: 15px;
+}

@@ -1,0 +1,21 @@
+.editShop-btn
+{
+  height: 40px;
+  width: 150px;
+  background: #D10024;
+  color: #FFF;
+  font-weight: 700;
+  border: none;
+  font-size: 12px;
+}
+
+.addProductShop-btn
+{
+  height: 40px;
+  width: 200px;
+  background: #D10024;
+  color: #FFF;
+  font-weight: 700;
+  border: none;
+  font-size: 12px;
+}
